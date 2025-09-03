@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(ar_steering)
+project(demo_ar_steering)
 
 find_package(catkin REQUIRED COMPONENTS
   robotont_msgs
