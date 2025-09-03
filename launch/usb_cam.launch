@@ -7,5 +7,5 @@
     <param name="camera_frame_id" value="usb_cam" />
     <param name="io_method" value="mmap"/>
   </node>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ar_steering)/config/ar_steering.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find demo_ar_steering)/config/ar_steering.rviz"/>
 </launch>
