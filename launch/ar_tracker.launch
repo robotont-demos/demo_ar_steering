@@ -1,5 +1,5 @@
 <launch>
-    <include file="$(find ar_steering)/launch/usb_cam.launch"/>
+    <include file="$(find demo_ar_steering)/launch/usb_cam.launch"/>
 
     <include file="$(find ar_track_alvar)/launch/pr2_indiv_no_kinect.launch">
         <arg name="cam_image_topic" value="usb_cam/image_raw"/>
