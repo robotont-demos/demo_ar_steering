@@ -1,2 +1,8 @@
+# ROS2
+build/
+install/
+log/
+
+# VS Code
 .vscode/
 
