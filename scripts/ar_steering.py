@@ -5,7 +5,7 @@ import math
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from tf_transformations import euler_from_quaternion
-from ros2_aruco_interfaces.msg import ArucoMarkers
+from aruco_opencv_msgs.msg import ArucoDetection
 
 
 MAX_LINEAR_SPEED = 0.1
@@ -28,43 +28,56 @@ class ArSteeringNode(Node):
 		cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
 
 		self.get_logger().info(f"Marker ID: {self.marker_id}")
-		self.get_logger().info(f"Velocity command topic {cmd_vel_topic}")
+		self.get_logger().info(f"Velocity command topic: {cmd_vel_topic}")
 
-		self.sub_poses = self.create_subscription(ArucoMarkers, '/aruco_markers', self.pose_callback, 1)
+		self.sub_poses = self.create_subscription(ArucoDetection, '/aruco_detections', self.pose_callback, 1)
 		self.pub_twist = self.create_publisher(Twist, cmd_vel_topic, 1)
+
+		self.tim_timeout = self.create_timer(0.5, self.timer_callback)
+
+
+	def timer_callback(self):
+		cmd = Twist()
+		self.pub_twist.publish(cmd)
 
 
 	def pose_callback(self, msg):
 		cmd = Twist()
 
 		# Find the desired marker, otherwise publish ZERO speed
-		if self.marker_id in msg.marker_ids:
-			marker_idx = msg.marker_ids.index(self.marker_id)
-			pose = msg.poses[marker_idx]
-			orientation = pose.orientation
+		for marker in msg.markers:
+			if marker.marker_id == self.marker_id:
+				pose = marker.pose
+				orientation = pose.orientation
 
-			roll, _pitch, yaw = euler_from_quaternion([
-				orientation.x,
-				orientation.y,
-				orientation.z,
-				orientation.w
-			])
+				roll, _pitch, yaw = euler_from_quaternion([
+					orientation.x,
+					orientation.y,
+					orientation.z,
+					orientation.w
+				])
 
-			if roll > -2.9 and roll < 2.9:
-				roll = math.atan2(math.sin(roll - math.pi), math.cos(roll - math.pi))
-				cmd.linear.x = linear_fit(roll, 1.0, MAX_LINEAR_SPEED)
-			if yaw < -0.1 or yaw > 0.1:
-				cmd.angular.z = linear_fit(yaw, 1.0, MAX_ANGULAR_SPEED)
+				if roll > -2.9 and roll < 2.9:
+					roll = math.atan2(math.sin(roll - math.pi), math.cos(roll - math.pi))
+					cmd.linear.x = linear_fit(roll, 1.0, MAX_LINEAR_SPEED)
+				if yaw < -0.1 or yaw > 0.1:
+					cmd.angular.z = linear_fit(yaw, 1.0, MAX_ANGULAR_SPEED)
 
 		self.pub_twist.publish(cmd)
+		self.tim_timeout.reset()
 
 
 def main(args=None):
 	rclpy.init(args=args)
 	node = ArSteeringNode()
-	rclpy.spin(node)
-	node.destroy_node()
-	rclpy.shutdown()
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt:
+		pass
+	finally:
+		node.destroy_node()
+		if rclpy.ok():
+			rclpy.shutdown()
 
 
 if __name__ == '__main__':
