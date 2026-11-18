@@ -27,14 +27,18 @@ def generate_launch_description():
 	ld.add_action(Node(
 		package='usb_cam',
 		executable='usb_cam_node_exe',
+		parameters=[{
+			'pixel_format': 'mjpeg2rgb', 
+		}]
 	))
 
 	ld.add_action(Node(
-		package='ros2_aruco',
-		executable='aruco_node',
+		package='aruco_opencv',
+		executable='aruco_tracker_autostart',
 		parameters=[{
-			'image_topic': '/image_raw', 
-			'camera_info_topic': '/camera_info'
+			'cam_base_topic': '/image_raw', 
+			'marker_dict': '5X5_250',
+			'image_sub_qos.reliability': 1
 		}]
 	))
 
