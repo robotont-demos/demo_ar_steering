@@ -28,10 +28,17 @@ class ArSteeringNode(Node):
 		cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
 
 		self.get_logger().info(f"Marker ID: {self.marker_id}")
-		self.get_logger().info(f"Velocity command topic {cmd_vel_topic}")
+		self.get_logger().info(f"Velocity command topic: {cmd_vel_topic}")
 
 		self.sub_poses = self.create_subscription(ArucoMarkers, '/aruco_markers', self.pose_callback, 1)
 		self.pub_twist = self.create_publisher(Twist, cmd_vel_topic, 1)
+
+		self.tim_timeout = self.create_timer(0.5, self.timer_callback)
+
+
+	def timer_callback(self):
+		cmd = Twist()
+		self.pub_twist.publish(cmd)
 
 
 	def pose_callback(self, msg):
@@ -57,14 +64,20 @@ class ArSteeringNode(Node):
 				cmd.angular.z = linear_fit(yaw, 1.0, MAX_ANGULAR_SPEED)
 
 		self.pub_twist.publish(cmd)
+		self.tim_timeout.reset()
 
 
 def main(args=None):
 	rclpy.init(args=args)
 	node = ArSteeringNode()
-	rclpy.spin(node)
-	node.destroy_node()
-	rclpy.shutdown()
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt:
+		pass
+	finally:
+		node.destroy_node()
+		if rclpy.ok():
+			rclpy.shutdown()
 
 
 if __name__ == '__main__':
